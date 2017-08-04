@@ -1,0 +1,10 @@
+__pycache__
+.venv*
+.idea
+*.iml
+*.exe
+*.zip
+tmp
+db.sqlite3
+bin
+.directory

@@ -1,0 +1,11 @@
+pefile==2016.3.28
+json-rpc==1.10.3
+cbor==1.0.0
+django==1.11.3
+django-debug-toolbar==1.8
+django-crispy-forms==1.6.1
+django-crequest==2016.3.16
+aiohttp==2.2.3
+aiohttp_wsgi==0.7.0
+greenlet==0.4.12
+goroutine==0.0.1

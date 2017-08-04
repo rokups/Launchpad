@@ -1,0 +1,3 @@
+[submodule "src/boot/windows/ReflectiveLdr"]
+	path = src/boot/windows/ReflectiveLdr
+	url = https://github.com/rokups/ReflectiveLdr.git

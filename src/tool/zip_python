@@ -1,0 +1,284 @@
+#!/usr/bin/env python3
+#
+# MIT License
+#
+# Copyright 2017 Launchpad project contributors (see COPYRIGHT.md)
+#
+# Permission is hereby granted, free of charge, to any person obtaining a
+# copy of this software and associated documentation files (the "Software"),
+# to deal in the Software without restriction, including without limitation
+# the rights to use, copy, modify, merge, publish, distribute, sublicense,
+# and/or sell copies of the Software, and to permit persons to whom the
+# Software is furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in
+# all copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
+# THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+# FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+# DEALINGS IN THE SOFTWARE.
+#
+import argparse
+import os
+import sys
+import re
+import sysconfig
+import zipfile
+import platform
+import itertools
+
+import pathlib
+import pefile
+import subprocess
+
+# Append parent directory to PYTHONPATH. Fixes the case where project is executed from command line.
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from common.utilities import compile_file
+
+
+# Native python modules included in stdlib.
+bundle_native_modules = ['_socket', 'select', '_ssl', '_overlapped', '_multiprocessing', 'unicodedata']
+# Pip package names that will be bundled.
+bundle_libs = ['json-rpc', 'cbor', 'aiohttp', 'greenlet', 'goroutine']
+# Dir names (not paths) excluded from stdlib and dependencies.
+exclude_dirs = ['lib2to3', 'test', 'tests', 'pydoc_data', 'msilib', 'ensurepip', 'curses', 'unittest',
+                'venv', '__pycache__', 'tkinter', 'dbm', 'idlelib', 'turtledemo', 'Tools']
+# Files excluded from stdlib.
+exclude_files = ['__main__.py', 'turtle.py', 'antigravity.py']
+# List of extensions that may be included.
+include_extensions = ['.py'] + ['.dll', '.pyd'] if os.name == 'nt' else ['.so']
+bundle_dlls_mingw = ['libwinpthread-1.dll']
+
+
+def get_cpu_arch():
+    is_64bits = sys.maxsize > 2**32
+    if is_64bits:
+        return 'x64'
+    else:
+        return 'x86'
+
+
+def is_excluded_path(file_path, extra_excludes=None):
+    is_excluded = False
+    for exclude in exclude_dirs + (extra_excludes or []):
+        if '{}{}{}'.format(os.sep, exclude, os.sep) in file_path:
+            is_excluded = True
+            break
+    if os.name == 'posix':
+        # On linux exclude native modules meant for other python versions.
+        if file_path.endswith('.so'):
+            if f'-{sys.version_info.major}{sys.version_info.minor}m-' not in file_path:
+                is_excluded = True
+    return is_excluded
+
+
+def find_in_dirs(file_name, dirs):
+    for dir in dirs:
+        full_path = os.path.join(dir, file_name)
+        if os.path.exists(full_path):
+            return full_path
+
+
+def find_in_path(file_name, extra_paths=None):
+    return find_in_dirs(file_name, (extra_paths if extra_paths else []) + os.getenv('PATH').split(os.path.pathsep))
+
+
+def unique(iterable):
+    uniques = set()
+    for item in iterable:
+        if item not in uniques:
+            uniques.add(item)
+            yield item
+
+
+def get_files_win():
+    exe_dir = os.path.dirname(sys.executable)
+    ucrt_dir = pathlib.Path(os.path.abspath(pathlib.Path(os.path.dirname(os.path.abspath(__file__))) / '..' / '..' / 'bin' / 'ucrt' / get_cpu_arch()))
+    dll_name = f'python{sys.version_info.major}{sys.version_info.minor}.dll'
+    dll_path = os.path.join(exe_dir, dll_name)
+
+    if not os.path.isfile(dll_path):
+        dll_path = find_in_path(dll_name)
+        if not os.path.isfile(dll_path):
+            raise FileNotFoundError(dll_name)
+
+    # Solve ucrt forwarders first.
+    for module_dll in sorted(os.listdir(str(ucrt_dir))):
+        module_path = find_in_dirs(module_dll, [ucrt_dir])
+        if module_path:
+            yield module_dll, module_path
+
+    # Then vcruntime and other dlls if any.
+    pe = pefile.PE(dll_path)
+    for module_dll in pe.DIRECTORY_ENTRY_IMPORT:
+        module_dll = module_dll.dll.decode().lower()
+        module_path = find_in_dirs(module_dll, [exe_dir])
+        if module_path:
+            yield module_dll, module_path
+
+    # Then interpreter dll.
+    yield os.path.basename(dll_path), dll_path
+
+    # Other native modules must come in last as they depend on interpreter dll.
+    dlls_dir = os.path.join(exe_dir, 'DLLs')
+    if not os.path.exists(dlls_dir):
+        dlls_dir = exe_dir
+
+    for extra_dll in bundle_native_modules:
+        yield f'{extra_dll}.pyd', os.path.join(dlls_dir, f'{extra_dll}.pyd')
+
+
+def get_files_mingw():
+    global bundle_dlls_mingw
+    root_dir = pathlib.Path('/') / os.getenv('MSYSTEM', None).lower()
+    bin_dir = root_dir / 'bin'
+    dylib_dir = root_dir / 'lib' / f'python{sys.version_info.major}.{sys.version_info.minor}' / 'lib-dynload'
+    bundle_dlls_mingw += [f'libpython{sys.version_info.major}.{sys.version_info.minor}m.dll']
+    for filename in os.listdir(str(bin_dir)):
+        if filename in bundle_dlls_mingw:
+            yield filename, bin_dir / filename
+
+    for filename in os.listdir(str(dylib_dir)):
+        new_filename = re.sub(f'-cpython-{sys.version_info.major}{sys.version_info.minor}m', '', filename)
+        if new_filename in include_extensions:
+            yield new_filename, dylib_dir / filename
+
+
+def get_files_posix():
+    file_path = find_in_dirs(f'libpython{sys.version_info.major}.{sys.version_info.minor}m.so', ['/usr/lib'])
+    yield os.path.basename(file_path), file_path
+
+    dynlib_path = sysconfig.get_path('stdlib') + '/lib-dynload'
+    for file_name in os.listdir(dynlib_path):
+        for include_module in bundle_native_modules:
+            if file_name.startswith(f'{include_module}.'):
+                file_path = os.path.join(dynlib_path, file_name)
+                if os.path.exists(file_path):
+                    yield os.path.basename(file_path), file_path
+
+
+def get_stdlib_files():
+    # Python freeze.py does this, apparently required by interpreter.
+    module_alias = {
+        'importlib{}_bootstrap.py'.format(os.sep): '_frozen_importlib.py',
+        'importlib{}_bootstrap_external.py'.format(os.sep): '_frozen_importlib_external.py'
+    }
+
+    root_dir = sysconfig.get_path('stdlib')
+    for root, dirs, files in os.walk(root_dir):
+        for file_name in files:
+            if file_name.endswith('.py'):
+                if file_name in exclude_files:
+                    continue
+
+                file_path = os.path.join(root, file_name)
+                if is_excluded_path(file_path, ['site-packages']):
+                    continue
+
+                module_name = file_path[len(root_dir)+1:]
+                yield module_name, file_path
+
+                if module_name in module_alias:
+                    yield module_alias[module_name], file_path
+
+
+def get_extra_package_paths(bundle_libs):
+    """
+    Resolves dependency package installed through pip.
+    :return: yields (archive_path, full_path) tuple.
+    """
+    check_libs = bundle_libs[:]
+    processed_packages = []
+    cpu_arch = get_cpu_arch()
+    if cpu_arch == 'x86':
+        suffix = f'win32'
+    elif cpu_arch == 'x64':
+        suffix = f'win_amd64'
+    nt_mark = f'.cp{sys.version_info.major}{sys.version_info.minor}-{suffix}'
+
+    while len(check_libs):
+        pkg_name = check_libs.pop()
+        if pkg_name in processed_packages:
+            continue
+        result = subprocess.check_output(['pip', 'show', '-f', pkg_name]).decode()
+        properties = {}
+        getting_files = False
+        for ln in result.split('\n'):
+            ln = ln.strip()
+            if ln == '':
+                break
+            if getting_files:
+                _, extension = os.path.splitext(ln)
+                # Exclude anything that is not code.
+                if extension not in include_extensions:
+                    continue
+                # Exclude package information, not required.
+                if '.dist-info/' in ln or '.egg-info/' in ln:
+                    continue
+                # Exclude python2 files. Some packages have them.
+                if ln.endswith('_py2.py'):
+                    continue
+                full_path = os.path.join(properties['Location'], ln)
+                if is_excluded_path(full_path):
+                    continue
+
+                if os.name == 'nt':
+                    if '.cp' in ln:
+                        if nt_mark in ln:
+                            ln = ln.replace(nt_mark, '')
+                        else:
+                            # Different architecture or python version
+                            continue
+
+                yield ln, full_path
+            else:
+                k, v = (v.strip() for v in ln.split(':', 1))
+                if k == 'Requires':
+                    if v:
+                        v = v.split(', ')
+                    else:
+                        v = []
+                elif k == 'Files':
+                    getting_files = True
+                    v = []
+                properties[k] = v
+
+        check_libs += properties['Requires']
+        processed_packages.append(pkg_name)
+
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+    parser.add_argument('output_path')
+    args = parser.parse_args()
+
+    if os.name == 'nt':
+        if os.getenv('MSYSTEM', None) in ('MINGW32', 'MINGW64'):
+            bundle_executables = get_files_mingw()
+        else:
+            bundle_executables = get_files_win()
+    elif os.name == 'posix':
+        bundle_executables = get_files_posix()
+    else:
+        raise SystemError('Platform not supported')
+
+    with zipfile.ZipFile(args.output_path, 'w', zipfile.ZIP_DEFLATED, False) as fp:
+        for archive_path, file_path in itertools.chain(
+            bundle_executables,
+            get_extra_package_paths(bundle_libs),
+            get_stdlib_files()
+        ):
+            archive_path = str(archive_path)
+            if archive_path.endswith('.py'):
+                code = compile_file(file_path, archive_path)
+                fp.writestr(archive_path + 'c', code)
+            else:
+                if archive_path.endswith('.pyd') or archive_path.endswith('.so'):
+                    archive_path = archive_path.replace(os.path.sep, '.')
+                    archive_path = re.sub(r'\.cpython-[^\.]+', '', archive_path)
+                fp.write(file_path, archive_path)
