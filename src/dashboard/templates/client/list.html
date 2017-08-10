@@ -23,5 +23,39 @@
 {###}
 {% extends 'base.html' %}
 {% block content %}
-    <div>Dragons be here.</div>
+<h1 class="page-header">Clients</h1>
+<div class="table-responsive">
+    <table class="table table-striped">
+        <thead>
+        <tr>
+            <th>#</th>
+            <th>ID</th>
+            <th>Title</th>
+            <th>Platform</th>
+            <th>CPU</th>
+            <th>Loader</th>
+            <th>Status</th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for client in clients %}
+            <tr>
+                <td>{{ forloop.counter }}</td>
+                <td><a href="{% url 'client_info' client.client_id %}">{{ client.client_id }}</a></td>
+                <td>{{ client.title }}</td>
+                <td>{{ client.platform }}</td>
+                <td>{{ client.cpu }}</td>
+                <td>{{ client.loader }}</td>
+                <td>
+                    {% if client.date_connected is not None and client.date_disconnected is None or client.date_connected > client.date_disconnected %}
+                        <i class="glyphicon glyphicon-off" style="color: green"></i>
+                    {% else %}
+                        <i class="glyphicon glyphicon-off" style="color: red"></i>
+                    {% endif %}
+                </td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
 {% endblock %}

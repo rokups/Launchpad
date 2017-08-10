@@ -22,6 +22,26 @@
 {# DEALINGS IN THE SOFTWARE.#}
 {###}
 {% extends 'base.html' %}
+{% load dashboard_tags %}
 {% block content %}
-    <div>Dragons be here.</div>
+    <h1 class="page-header">Client {{client.client_id}}</h1>
+
+    <div class="container-fluid">
+        <div class="row">
+        </div>
+        <div class="row">
+            <ul class="nav nav-pills">
+                {% get_urls 'client' as client_urls %}
+                {% for page_name, page_title in client_urls %}
+                    {% url page_name client.client_id as url %}
+                    <li role="presentation" class="{% on_active url %}">
+                        <a href="{{ url }}">{{ page_title }}</a>
+                    </li>
+                {% endfor %}
+            </ul>
+        </div>
+        <div class="row">
+            {% block client_content %}{% endblock %}
+        </div>
+    </div>
 {% endblock %}

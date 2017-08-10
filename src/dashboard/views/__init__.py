@@ -23,6 +23,6 @@
 #
 from .index import view_index
 from .client import ViewClientAdd
-from .client import ViewClient
+from .client import ClientInfo
 from .client import view_client_list
 from .loader import view_loader

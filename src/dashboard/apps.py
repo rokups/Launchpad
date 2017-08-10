@@ -29,7 +29,25 @@ from django.apps import AppConfig
 class DashboardConfig(AppConfig):
     name = 'dashboard'
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.links = {
+            'sidebar': [
+               ('client_list', 'Clients'),
+               ('client_add', 'Add Client'),
+            ],
+            'client': [
+            ]
+        }
+
+    def ready(self):
+        self.links['client'].append(['client_info', 'Info'])
+        self.links['client'].append(['client_filesystem', 'Filesystem'])
+
     def setup_aiohttp(self, application: Application):
         from dashboard.transport.ws import view_transport_ws
         logging.basicConfig(level=logging.DEBUG)
         application.router.add_get('/w/{client_id}', view_transport_ws)
+
+    def __str__(self):
+        return 'Workie'

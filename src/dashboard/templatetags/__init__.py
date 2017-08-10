@@ -1,4 +1,3 @@
-<!--
 #
 # MIT License
 #
@@ -22,10 +21,3 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
 #
--->
-{% extends 'base.html' %}
-{% load crispy_forms_tags %}
-{% block content %}
-    <h1 class="page-header">Add Client</h1>
-    {% crispy form %}
-{% endblock %}

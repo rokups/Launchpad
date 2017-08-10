@@ -21,7 +21,35 @@
 {# FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER#}
 {# DEALINGS IN THE SOFTWARE.#}
 {###}
-{% extends 'base.html' %}
-{% block content %}
-    <div>Dragons be here.</div>
+{% extends 'client/base.html' %}
+{% block client_content %}
+    <div class="col-sm-2 col-md-1">
+        One-liner:
+    </div>
+    <div class="col-sm-8 col-md-6">
+        <textarea id="one-liner" rows="1" cols="80">{{ one_liner }}</textarea>
+    </div>
+    <div class="col-sm-1"><button onclick="copy_text('one-liner')"><i class="glyphicon glyphicon-copy"></i></button></div>
+    <form method="post">
+        {% csrf_token %}
+        <input type="submit" value="Test">
+    </form>
+{% endblock %}
+{% block footer %}
+    <script type="text/javascript">
+        function copy_text(element_id)
+        {
+            var textarea = document.getElementById(element_id);
+            textarea.select();
+            try
+            {
+                return document.execCommand("copy");
+            }
+            catch (ex)
+            {
+                alert('Copying failed');
+                return false;
+            }
+        }
+    </script>
 {% endblock %}

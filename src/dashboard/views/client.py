@@ -25,15 +25,15 @@ from django import forms
 from django.shortcuts import render, redirect
 from django.urls import reverse
 from django.views import View
+from django.views.generic import TemplateView
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Submit
 
 from dashboard.models import Client
-from common.session import LaunchpadSession
 
 
 def view_client_list(request):
-    return render(request, 'client_list.html', {
+    return render(request, 'client/list.html', {
         'clients': Client.objects.all()
     })
 
@@ -51,7 +51,7 @@ class ClientAddForm(forms.ModelForm):
 
 class ViewClientAdd(View):
     def get(self, request):
-        return render(request, 'client_add.html', {
+        return render(request, 'client/new.html', {
             'form': ClientAddForm()
         })
 
@@ -59,16 +59,17 @@ class ViewClientAdd(View):
         form = ClientAddForm(data=request.POST)
         if form.is_valid():
             client = form.save()
-            return redirect(reverse('client_view', args=(client.client_id,)))
+            return redirect(reverse('client_info', args=(client.client_id,)))
         else:
-            return render(request, 'client_add.html', {
+            return render(request, 'client/new.html', {
                 'form': form
             })
 
 
-class ViewClient(View):
+class ClientInfo(TemplateView):
+    template_name = 'client/info.html'
 
-    def show_client_view(self, request, client_id, extra_context=None):
+    def get(self, request, client_id):
         client = Client.objects.get(client_id=client_id)
         loader = client.get_loader()
         loader_url = request.build_absolute_uri(reverse('client_loader', args=[client_id]))
@@ -77,18 +78,9 @@ class ViewClient(View):
             'client': client,
             'one_liner': one_liner
         }
-        context.update(extra_context or {})
-        return render(request, 'client_view.html', context)
-
-    def get(self, request, client_id):
-        return self.show_client_view(request, client_id)
+        return self.render_to_response(context)
 
     def post(self, request, client_id):
-        try:
-            directory_listing = LaunchpadSession.clients[client_id].list_direcotry(request.POST['directory'])
-        except KeyError:
-            directory_listing = 'Error: client is not connected.'
-
-        return self.show_client_view(request, client_id, {
-            'directory_listing': directory_listing
-        })
+        client = Client.objects.get(client_id=client_id)
+        client.session.fs_enumerate_directory('/')
+        return self.get(request, client_id)

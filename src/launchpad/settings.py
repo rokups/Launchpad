@@ -36,6 +36,10 @@ https://docs.djangoproject.com/en/1.11/ref/settings/
 import os
 import pathlib
 
+from django.contrib import messages
+
+from dashboard.modules import register_module_template_dirs, register_module_urlpatterns
+
 BASE_DIR = pathlib.Path(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 ROOT_DIR = BASE_DIR / '..'
 DEPENDENCIES_DIR = ROOT_DIR / 'dep'
@@ -114,10 +118,26 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
+MESSAGE_TAGS = {
+    messages.SUCCESS: 'success',
+    messages.INFO: 'info',
+    messages.WARNING: 'warning',
+    messages.ERROR: 'danger',
+    messages.DEBUG: 'info'
+}
+
 LANGUAGE_CODE = 'en-us'
 TIME_ZONE = 'UTC'
 USE_I18N = True
 USE_L10N = True
 USE_TZ = True
+DATE_FORMAT = 'Y-m-d'
+DATETIME_FORMAT = 'Y-m-d H:i:s'
 STATIC_URL = '/static/'
 CRISPY_TEMPLATE_PACK = 'bootstrap3'
+
+CLIENT_ID_REGEX = r'(?P<client_id>[0-9a-zA-Z]{4})'
+
+register_module_template_dirs()
+# register_module_urlpatterns()
+

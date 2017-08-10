@@ -21,18 +21,31 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
 #
-from django.conf import settings
-from django.conf.urls import url
-import dashboard.views
-from dashboard.modules import register_module_urlpatterns
-from dashboard.modules.fs.views import FilesystemView
+import os
 
-urlpatterns = [
-    url(r'^$', dashboard.views.view_index, name='index'),
-    url(rf'^l/{settings.CLIENT_ID_REGEX}$', dashboard.views.view_loader, name='client_loader'),
-    url(r'^client$', dashboard.views.view_client_list, name='client_list'),
-    url(r'^new/client$', dashboard.views.ViewClientAdd.as_view(), name='client_add'),
-    url(rf'^client/{settings.CLIENT_ID_REGEX}/info$', dashboard.views.ClientInfo.as_view(), name='client_info'),
 
-    url(rf'^client/{settings.CLIENT_ID_REGEX}/fs$', FilesystemView.as_view(), name='client_filesystem'),
-]
+def encode(obj):
+    """
+    Converts objects of various types to cbor-compatible types.
+    :param obj: object
+    :return: new value on success, raises ValueError on failure.
+    """
+
+    if isinstance(obj, (dict, set, list, str, int, float)):
+        return
+
+    if isinstance(obj, os.stat_result):
+        return {
+            'st_mode': obj.st_mode,
+            'st_ino': obj.st_ino,
+            'st_dev': obj.st_dev,
+            'st_nlink': obj.st_nlink,
+            'st_uid': obj.st_uid,
+            'st_gid': obj.st_gid,
+            'st_size': obj.st_size,
+            'st_atime': obj.st_atime,
+            'st_mtime': obj.st_mtime,
+            'st_ctime': obj.st_ctime,
+        }
+
+    raise ValueError('Unknown object type can not be encoded')

@@ -28,8 +28,10 @@ import string
 from django.db import models
 from crequest.middleware import CrequestMiddleware
 
-from common.modules import loaders
+from common.session import LaunchpadSession
 from common.transport import all_transports
+
+from dashboard.modules import loaders
 
 
 def _make_client_id():
@@ -70,3 +72,10 @@ class Client(models.Model):
         else:
             raise ValueError(f'Unsupported protocol {self.protocol}')
         return url
+
+    @property
+    def session(self):
+        try:
+            return LaunchpadSession.clients[self.client_id]
+        except KeyError:
+            return None

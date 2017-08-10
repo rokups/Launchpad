@@ -29,11 +29,12 @@ import subprocess
 from contextlib import suppress
 
 from client.importer import RemoteImporter
+from client.modules.fs import FilesystemClientModule
 from common.session import LaunchpadSession
 from common import transport
 
 
-class LaunchpadClient(object):
+class LaunchpadClient(FilesystemClientModule):
     def __init__(self, session):
         self._session = session
 

@@ -22,6 +22,8 @@
 {# DEALINGS IN THE SOFTWARE.#}
 {###}
 {% extends 'base.html' %}
+{% load crispy_forms_tags %}
 {% block content %}
-    <div>Dragons be here.</div>
+    <h1 class="page-header">Add Client</h1>
+    {% crispy form %}
 {% endblock %}

@@ -1,29 +1,28 @@
 <!DOCTYPE html>
-<!--
-#
-# MIT License
-#
-# Copyright 2017 Launchpad project contributors (see COPYRIGHT.md)
-#
-# Permission is hereby granted, free of charge, to any person obtaining a
-# copy of this software and associated documentation files (the "Software"),
-# to deal in the Software without restriction, including without limitation
-# the rights to use, copy, modify, merge, publish, distribute, sublicense,
-# and/or sell copies of the Software, and to permit persons to whom the
-# Software is furnished to do so, subject to the following conditions:
-#
-# The above copyright notice and this permission notice shall be included in
-# all copies or substantial portions of the Software.
-#
-# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
-# THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-# FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
-# DEALINGS IN THE SOFTWARE.
-#
--->
+{##}
+{# MIT License#}
+{##}
+{# Copyright 2017 Launchpad project contributors (see COPYRIGHT.md)#}
+{##}
+{# Permission is hereby granted, free of charge, to any person obtaining a#}
+{# copy of this software and associated documentation files (the "Software"),#}
+{# to deal in the Software without restriction, including without limitation#}
+{# the rights to use, copy, modify, merge, publish, distribute, sublicense,#}
+{# and/or sell copies of the Software, and to permit persons to whom the#}
+{# Software is furnished to do so, subject to the following conditions:#}
+{##}
+{# The above copyright notice and this permission notice shall be included in#}
+{# all copies or substantial portions of the Software.#}
+{##}
+{# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR#}
+{# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,#}
+{# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL#}
+{# THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER#}
+{# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING#}
+{# FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER#}
+{# DEALINGS IN THE SOFTWARE.#}
+{###}
+{% load dashboard_tags %}
 <html lang="en">
 <head>
     <meta charset="utf-8">
@@ -58,20 +57,39 @@
                 <nav>
                     {% with url_name=request.resolver_match.url_name %}
                         <ul class="nav nav-sidebar">
-                            <li class="{% if url_name == 'client_list' %}active{% endif %}"><a href="{% url 'client_list' %}">Clients</a></li>
-                            <li class="{% if url_name == 'client_add' %}active{% endif %}"><a href="{% url 'client_add' %}">Add Client</a></li>
+                            {% get_urls 'sidebar' as sidebar_urls %}
+                            {% for page_name, page_title in sidebar_urls %}
+                                {% url page_name as url %}
+                                <li class="{% on_active url %}"><a href="{{ url }}">{{ page_title }}</a></li>
+                            {% endfor %}
                         </ul>
                         {% block sidebar %}{% endblock %}
                     {% endwith %}
                 </nav>
             </div>
             <div class="col-sm-9 col-sm-offset-3 col-md-10 col-md-offset-2 main">
-                {% block content %}{% endblock %}
+                <div class="container-fluid">
+                    <div class="row">
+                        {% if messages %}
+                            {% for msg in messages %}
+                                <div class="alert alert-dismissible alert-{% if msg.tags %}{{ msg.tags }}{% else %}warning{% endif %}" role="alert">
+                                    <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                                    {{ msg }}
+                                </div>
+                            {% endfor %}
+                        {% endif %}
+                    </div>
+                    <div class="row">
+                        {% block content %}{% endblock %}
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 
+    <script src="https://code.jquery.com/jquery-3.2.1.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
     <script src="https://unpkg.com/vue@2.4.1/dist/vue.min.js" crossorigin="anonymous"></script>
+    {% block footer %}{% endblock %}
 </body>
 </html>

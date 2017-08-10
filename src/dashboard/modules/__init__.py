@@ -21,18 +21,29 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
 #
-from django.conf import settings
-from django.conf.urls import url
-import dashboard.views
-from dashboard.modules import register_module_urlpatterns
-from dashboard.modules.fs.views import FilesystemView
+import os
 
-urlpatterns = [
-    url(r'^$', dashboard.views.view_index, name='index'),
-    url(rf'^l/{settings.CLIENT_ID_REGEX}$', dashboard.views.view_loader, name='client_loader'),
-    url(r'^client$', dashboard.views.view_client_list, name='client_list'),
-    url(r'^new/client$', dashboard.views.ViewClientAdd.as_view(), name='client_add'),
-    url(rf'^client/{settings.CLIENT_ID_REGEX}/info$', dashboard.views.ClientInfo.as_view(), name='client_info'),
+from launchpad import settings
 
-    url(rf'^client/{settings.CLIENT_ID_REGEX}/fs$', FilesystemView.as_view(), name='client_filesystem'),
-]
+
+def register_module_template_dirs():
+    """
+    Appends module template dirs to `settings.TEMPLATES[0]['DIRS']`.
+    """
+    base_dir = settings.BASE_DIR / 'dashboard' / 'modules'
+    for module_pkg in os.listdir(str(base_dir)):
+        templates_dir = base_dir / module_pkg / 'templates'
+        if os.path.isdir(templates_dir):
+            settings.TEMPLATES[0]['DIRS'].append(str(templates_dir))
+
+
+def register_module_urlpatterns():
+    """
+    Imports views module from each module and appends it's urlpatterns list to dashboard urlpatterns.
+    """
+    from dashboard import urls
+    base_dir = settings.BASE_DIR / 'dashboard' / 'modules'
+    for module_pkg in os.listdir(str(base_dir)):
+        if os.path.exists(base_dir / module_pkg / 'views.py') or os.path.exists(base_dir / module_pkg / 'views'):
+            m = __import__(f'dashboard.modules.{module_pkg}.views')
+            urls.urlpatterns.extend(getattr(m, 'urlpatterns', []))

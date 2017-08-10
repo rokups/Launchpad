@@ -21,18 +21,26 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
 #
-from django.conf import settings
-from django.conf.urls import url
-import dashboard.views
-from dashboard.modules import register_module_urlpatterns
-from dashboard.modules.fs.views import FilesystemView
+from django import template
+from django.apps import apps
+from crequest.middleware import CrequestMiddleware
+from django.urls import reverse
 
-urlpatterns = [
-    url(r'^$', dashboard.views.view_index, name='index'),
-    url(rf'^l/{settings.CLIENT_ID_REGEX}$', dashboard.views.view_loader, name='client_loader'),
-    url(r'^client$', dashboard.views.view_client_list, name='client_list'),
-    url(r'^new/client$', dashboard.views.ViewClientAdd.as_view(), name='client_add'),
-    url(rf'^client/{settings.CLIENT_ID_REGEX}/info$', dashboard.views.ClientInfo.as_view(), name='client_info'),
+register = template.Library()
 
-    url(rf'^client/{settings.CLIENT_ID_REGEX}/fs$', FilesystemView.as_view(), name='client_filesystem'),
-]
+
+@register.simple_tag
+def app_config(app_label='dashboard'):
+    return apps.get_app_config(app_label)
+
+
+@register.simple_tag
+def on_active(url_path, return_value='active'):
+    request = CrequestMiddleware.get_request()
+    if request.path.startswith(url_path):
+        return return_value
+
+
+@register.simple_tag
+def get_urls(url_list_name):
+    return app_config().links[url_list_name]
