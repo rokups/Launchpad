@@ -62,10 +62,6 @@ class LaunchpadServerSession(LaunchpadSession):
                 client.save()
 
     @tinyrpc.public
-    def greet(self):
-        return 'Howdy'
-
-    @tinyrpc.public
     def import_module(self, module_name):
         try:
             spec = importlib.util.find_spec(module_name)

@@ -48,7 +48,7 @@ class LaunchpadClientSession(LaunchpadSession):
 
     def on_connect(self, connection):
         super().on_connect(connection)
-        # sys.meta_path.insert(0, self._remote_importer)
+        sys.meta_path.insert(0, self._remote_importer)
 
     def on_disconnect(self):
         with suppress(ValueError):
