@@ -24,6 +24,7 @@
 import os
 from contextlib import suppress
 
+import itertools
 import tinyrpc
 
 
@@ -40,7 +41,7 @@ class FilesystemClientModule(object):
             dir_path = 'C:/'
 
         result = {}
-        for filename in os.listdir(dir_path):
+        for filename in itertools.chain(['..'], os.listdir(dir_path)):
             full_path = os.path.join(dir_path, filename)
             file_info = {
                 'stat': None,

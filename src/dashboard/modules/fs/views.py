@@ -54,7 +54,7 @@ class FilesystemView(ClientOnlineRequiredMixin, TemplateView):
 
     def get(self, request, client_id):
         entry = Client.objects.get(client_id=client_id)
-        current_path = request.POST.get('cd', request.session.get('cd', '/'))
+        current_path = os.path.abspath(request.POST.get('cd', request.session.get('cd', '/')))
         if not current_path.endswith('/'):
             current_path += '/'
         request.session['cd'] = current_path
