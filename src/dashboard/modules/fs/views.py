@@ -41,7 +41,12 @@ class FilesystemView(TemplateView):
             stats['st_mode'] = stat.filemode(stats['st_mode'])
             stats['st_ctime'] = datetime.datetime.fromtimestamp(stats['st_ctime'])
             stats['st_mtime'] = datetime.datetime.fromtimestamp(stats['st_mtime'])
-        return directory_listing
+
+        # Sorts by entry type, directories first.
+        def sort_key(item):
+            return ('d' if item[1]['st_isdir'] else 'f') + item[0]
+
+        return dict(sorted(directory_listing.items(), key=sort_key))
 
     def get(self, request, client_id):
         client = Client.objects.get(client_id=client_id)

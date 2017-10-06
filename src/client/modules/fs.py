@@ -35,8 +35,10 @@ class FilesystemClientModule(object):
         result = {}
         for filename in os.listdir(dir_path):
             try:
-                info = os.stat(os.path.join(dir_path, filename))
+                full_path = os.path.join(dir_path, filename)
+                info = os.stat(full_path)
                 info = encoder.encode(info)
+                info['st_isdir'] = os.path.isdir(full_path)
             except (OSError, KeyError):
                 info = None
             result[filename] = info
