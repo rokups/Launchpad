@@ -38,7 +38,7 @@ import pathlib
 
 from django.contrib import messages
 
-from dashboard.modules import register_module_template_dirs, register_module_urlpatterns
+from dashboard.modules import register_module_template_dirs
 
 BASE_DIR = pathlib.Path(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 ROOT_DIR = BASE_DIR / '..'
@@ -139,5 +139,4 @@ CRISPY_TEMPLATE_PACK = 'bootstrap3'
 CLIENT_ID_REGEX = r'(?P<client_id>[0-9a-zA-Z]{4})'
 
 register_module_template_dirs()
-# register_module_urlpatterns()
 

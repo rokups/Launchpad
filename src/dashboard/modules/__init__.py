@@ -21,29 +21,32 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
 #
+import importlib
 import os
 
 from launchpad import settings
+
+
+def enumerate_modules():
+    base_dir = settings.BASE_DIR / 'dashboard' / 'modules'
+    for module_pkg in os.listdir(str(base_dir)):
+        yield base_dir, module_pkg
 
 
 def register_module_template_dirs():
     """
     Appends module template dirs to `settings.TEMPLATES[0]['DIRS']`.
     """
-    base_dir = settings.BASE_DIR / 'dashboard' / 'modules'
-    for module_pkg in os.listdir(str(base_dir)):
+    for base_dir, module_pkg in enumerate_modules():
         templates_dir = base_dir / module_pkg / 'templates'
         if os.path.isdir(templates_dir):
             settings.TEMPLATES[0]['DIRS'].append(str(templates_dir))
 
 
-def register_module_urlpatterns():
+def gather_module_urlpatterns():
     """
     Imports views module from each module and appends it's urlpatterns list to dashboard urlpatterns.
     """
-    from dashboard import urls
-    base_dir = settings.BASE_DIR / 'dashboard' / 'modules'
-    for module_pkg in os.listdir(str(base_dir)):
+    for base_dir, module_pkg in enumerate_modules():
         if os.path.exists(base_dir / module_pkg / 'views.py') or os.path.exists(base_dir / module_pkg / 'views'):
-            m = __import__(f'dashboard.modules.{module_pkg}.views')
-            urls.urlpatterns.extend(getattr(m, 'urlpatterns', []))
+            yield getattr(importlib.import_module(f'dashboard.modules.{module_pkg}.views'), 'urlpatterns', [])
