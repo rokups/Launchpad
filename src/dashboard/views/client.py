@@ -79,8 +79,3 @@ class ClientInfo(TemplateView):
             'one_liner': one_liner
         }
         return self.render_to_response(context)
-
-    def post(self, request, client_id):
-        client = Client.objects.get(client_id=client_id)
-        client.session.fs_enumerate_directory('/')
-        return self.get(request, client_id)
