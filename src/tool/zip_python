@@ -44,7 +44,7 @@ from common.utilities import compile_file
 # Native python modules included in stdlib.
 bundle_native_modules = ['_socket', 'select', '_ssl', '_overlapped', '_multiprocessing', 'unicodedata']
 # Pip package names that will be bundled.
-bundle_libs = ['json-rpc', 'cbor', 'aiohttp', 'greenlet', 'goroutine']
+bundle_libs = ['json-rpc', 'cbor2', 'aiohttp', 'greenlet', 'goroutine']
 # Dir names (not paths) excluded from stdlib and dependencies.
 exclude_dirs = ['lib2to3', 'test', 'tests', 'pydoc_data', 'msilib', 'ensurepip', 'curses', 'unittest',
                 'venv', '__pycache__', 'tkinter', 'dbm', 'idlelib', 'turtledemo', 'Tools']

@@ -26,10 +26,11 @@ import json
 import logging
 
 import aiohttp
-import cbor
+import cbor2
 from aiohttp import web
 from goroutine import goroutine, yield_from
 
+from common import encoder
 from .interface import Connection
 
 
@@ -85,7 +86,7 @@ class WebSocketConnection(Connection):
                 if isinstance(msg, bytes):
                     await self._socket.send_bytes(msg)
                 elif isinstance(msg, dict):
-                    await self._socket.send_bytes(cbor.dumps(msg))
+                    await self._socket.send_bytes(cbor2.dumps(msg, default=encoder.cbor2_encoder))
                 elif isinstance(msg, str):
                     await self._socket.send_str(msg)
                 else:
@@ -106,7 +107,7 @@ class WebSocketConnection(Connection):
             if msg.type == aiohttp.WSMsgType.TEXT:
                 msg = json.loads(msg.data)
             elif msg.type == aiohttp.WSMsgType.BINARY:
-                msg = cbor.loads(msg.data)
+                msg = cbor2.loads(msg.data, tag_hook=encoder.cbor2_decoder)
             elif msg.type == aiohttp.WSMsgType.CLOSING:
                 pass
             elif msg.type == aiohttp.WSMsgType.CLOSED or msg.type == aiohttp.WSMsgType.CLOSE:

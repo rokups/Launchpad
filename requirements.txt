@@ -1,6 +1,6 @@
 pefile==2016.3.28
 tinytinyrpc==0.0.1
-cbor==1.0.0
+cbor2==4.0.1
 django==1.11.3
 django-debug-toolbar==1.8
 django-crispy-forms==1.6.1

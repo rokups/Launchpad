@@ -22,30 +22,41 @@
 # DEALINGS IN THE SOFTWARE.
 #
 import os
+from enum import Enum
+
+from cbor2 import CBORTag
 
 
-def encode(obj):
+class _Tags(Enum):
+    EXCEPTION = 1000
+
+
+def cbor2_encoder(encoder, value):
     """
     Converts objects of various types to cbor-compatible types.
-    :param obj: object
-    :return: new value on success, raises ValueError on failure.
+    :param encoder: cbor encoder that should be called
+    :param value: value to encode
     """
 
-    if isinstance(obj, (dict, set, list, str, int, float)):
-        return obj
+    if isinstance(value, Exception):
+        encoder.encode(CBORTag(_Tags.EXCEPTION.value, encoder.encode_to_bytes({
+            'type': type(value).__name__,
+            'dict': value.__dict__
+        })))
+    else:
+        raise ValueError('Encoding of type {} is not supported'.format(type(value).__name__))
 
-    if isinstance(obj, os.stat_result):
-        return {
-            'st_mode': obj.st_mode,
-            'st_ino': obj.st_ino,
-            'st_dev': obj.st_dev,
-            'st_nlink': obj.st_nlink,
-            'st_uid': obj.st_uid,
-            'st_gid': obj.st_gid,
-            'st_size': obj.st_size,
-            'st_atime': obj.st_atime,
-            'st_mtime': obj.st_mtime,
-            'st_ctime': obj.st_ctime,
-        }
 
-    raise ValueError('Unknown object type can not be encoded')
+def cbor2_decoder(decoder, tag, shareable_index=None):
+    if tag.tag == _Tags:
+        state = decoder.decode_from_bytes(tag.value)
+        if tag.tag == _Tags.EXCEPTION.value:
+            tag_type = __builtins__[state['type']]
+        else:
+            raise ValueError('Decoding of tag {} is not supported'.format(tag.tag))
+        instance = tag_type.__new__(tag_type)
+        decoder.set_shareable(shareable_index, instance)
+        instance.__dict__.update(state)
+        return instance
+    else:
+        return tag
