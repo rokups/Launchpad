@@ -30,6 +30,7 @@ import tinyrpc
 
 from client.importer import RemoteImporter
 from client.modules.fs import FilesystemClientModule
+from client.modules.shell import ShellClientModule
 from common.session import LaunchpadSession
 from common import transport
 
@@ -45,6 +46,7 @@ class LaunchpadClientSession(LaunchpadSession):
         self.server = self._dispatcher.get_object('server')
         # Initialize plugins
         self.fs = FilesystemClientModule()
+        self.shell = ShellClientModule()
 
     def on_connect(self, connection):
         super().on_connect(connection)

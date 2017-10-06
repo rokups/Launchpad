@@ -21,35 +21,30 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
 #
-import logging
-from aiohttp.web import Application
-from django.apps import AppConfig
+import os
+import shlex
+import subprocess
+
+import tinyrpc
 
 
-class DashboardConfig(AppConfig):
-    name = 'dashboard'
+@tinyrpc.public
+class ShellClientModule(object):
+    @classmethod
+    def setup(cls):
+        pass
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.links = {
-            'sidebar': [
-               ('client_list', 'Clients'),
-               ('client_add', 'Add Client'),
-            ],
-            'client': [
-            ]
-        }
-
-    def ready(self):
-        self.links['client'].append(['client_info', 'Info'])
-        # TODO: gather these automatically
-        self.links['client'].append(['client_filesystem', 'Filesystem'])
-        self.links['client'].append(['client_shell', 'Shell'])
-
-    def setup_aiohttp(self, application: Application):
-        from dashboard.transport.ws import view_transport_ws
-        logging.basicConfig(level=logging.DEBUG)
-        application.router.add_get('/w/{client_id}', view_transport_ws)
-
-    def __str__(self):
-        return 'Workie'
+    @tinyrpc.public
+    def run_shell_command(self, shell_command, current_dir):
+        if os.name == 'nt' and current_dir == '/':
+            current_dir = 'C:/'
+        try:
+            ps = subprocess.Popen(shlex.split(shell_command), cwd=current_dir, stdout=subprocess.PIPE,
+                                  stderr=subprocess.STDOUT)
+            result, _ = ps.communicate()
+            result = result.decode()
+        except Exception as e:
+            result = str(e)
+        if not result.endswith('\n'):
+            result += '\n'
+        return result
