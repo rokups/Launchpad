@@ -21,6 +21,9 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
 #
+import datetime
+import stat
+
 from django import template
 from django.apps import apps
 from crequest.middleware import CrequestMiddleware
@@ -44,3 +47,13 @@ def on_active(url_path, return_value='active'):
 @register.simple_tag
 def get_urls(url_list_name):
     return app_config().links[url_list_name]
+
+
+@register.filter
+def from_timestamp(timestamp):
+    return datetime.datetime.fromtimestamp(timestamp)
+
+
+@register.filter
+def file_mode_to_str(mode):
+    return stat.filemode(mode)
