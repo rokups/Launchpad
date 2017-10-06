@@ -26,7 +26,7 @@
 
 {% block client_content %}
     <div class="col-md-12">
-        <form class="form-horizontal" method="post">
+        <form class="form-horizontal" method="post" id="navigation-form">
             {% csrf_token %}
             <div class="form-group">
                 <label for="fs-path" class="sr-only">Filesystem path</label>
@@ -37,41 +37,41 @@
                     </div>
                 </div>
             </div>
-            {% if directory_listing %}
-                <table class="table table-striped">
-                    <tr>
-                        <th>Name</th>
-                        <th>Access</th>
-                        <th>Modification Time</th>
-                        <th>Access Time</th>
-                        <th>Actions</th>
-                    </tr>
-                    {% for filename, info in directory_listing.items %}
-                        <tr>
-                            <td>
-                                {% if info.is_dir %}
-                                    <button class="btn btn-link" name="cd" type="submit" value="{{ current_path }}{{ filename }}/">{{ filename }}</button>
-                                {% else %}
-                                    {{ filename }}
-                                {% endif %}
-                            </td>
-                            <td>{{ info.stat.st_mode | file_mode_to_str}}</td>
-                            <td>{{ info.stat.st_mtime | from_timestamp}}</td>
-                            <td>{{ info.stat.st_ctime | from_timestamp}}</td>
-                            <td>
-                                <div class="btn-group">
-                                {% if not info.is_dir %}
-                                    <form method="post" action="{% url 'client_filesystem_view' client.client_id %}" class="inline">
-                                        {% csrf_token %}
-                                        <button class="btn btn-sm" type="submit" value="{{ current_path }}{{ filename }}" name="path" title="View as text"><i class="glyphicon glyphicon-eye-open"></i></button>
-                                    </form>
-                                {% endif %}
-                                </div>
-                            </td>
-                        </tr>
-                    {% endfor %}
-                </table>
-            {% endif %}
         </form>
+        {% if directory_listing %}
+            <table class="table table-striped">
+                <tr>
+                    <th>Name</th>
+                    <th>Access</th>
+                    <th>Modification Time</th>
+                    <th>Access Time</th>
+                    <th>Actions</th>
+                </tr>
+                {% for filename, info in directory_listing.items %}
+                    <tr>
+                        <td>
+                            {% if info.is_dir %}
+                                <button class="btn btn-link" name="cd" type="submit" form="navigation-form" value="{{ current_path }}{{ filename }}/">{{ filename }}</button>
+                            {% else %}
+                                {{ filename }}
+                            {% endif %}
+                        </td>
+                        <td>{{ info.stat.st_mode | file_mode_to_str}}</td>
+                        <td>{{ info.stat.st_mtime | from_timestamp}}</td>
+                        <td>{{ info.stat.st_ctime | from_timestamp}}</td>
+                        <td>
+                            <div class="btn-group">
+                            {% if not info.is_dir %}
+                                <form method="post" action="{% url 'client_filesystem_view' client.client_id %}" class="inline">
+                                    {% csrf_token %}
+                                    <button class="btn btn-sm" type="submit" value="{{ current_path }}{{ filename }}" name="path" title="View as text"><i class="glyphicon glyphicon-eye-open"></i></button>
+                                </form>
+                            {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </table>
+        {% endif %}
     </div>
 {% endblock %}
