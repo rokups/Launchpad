@@ -73,6 +73,9 @@ class Client(models.Model):
             raise ValueError(f'Unsupported protocol {self.protocol}')
         return url
 
+    def is_online(self):
+        return self.client_id in LaunchpadSession.clients
+
     @property
     def session(self):
         try:

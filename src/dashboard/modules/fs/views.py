@@ -29,10 +29,11 @@ from django.conf.urls import url
 from django.contrib import messages
 from django.views.generic import TemplateView
 
+from dashboard.mixins import ClientOnlineRequiredMixin
 from dashboard.models import Client
 
 
-class FilesystemView(TemplateView):
+class FilesystemView(ClientOnlineRequiredMixin, TemplateView):
     template_name = 'client/module/filesystem.html'
 
     @staticmethod
