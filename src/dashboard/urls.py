@@ -24,8 +24,7 @@
 from django.conf import settings
 from django.conf.urls import url
 import dashboard.views
-from dashboard.modules import register_module_urlpatterns
-from dashboard.modules.fs.views import FilesystemView
+from dashboard.modules.fs.views import urlpatterns as fs_urlpatterns
 
 urlpatterns = [
     url(r'^$', dashboard.views.view_index, name='index'),
@@ -33,6 +32,4 @@ urlpatterns = [
     url(r'^client$', dashboard.views.view_client_list, name='client_list'),
     url(r'^new/client$', dashboard.views.ViewClientAdd.as_view(), name='client_add'),
     url(rf'^client/{settings.CLIENT_ID_REGEX}/info$', dashboard.views.ClientInfo.as_view(), name='client_info'),
-
-    url(rf'^client/{settings.CLIENT_ID_REGEX}/fs$', FilesystemView.as_view(), name='client_filesystem'),
-]
+] + fs_urlpatterns
