@@ -30,7 +30,7 @@
         <div class="row">
         </div>
         <div class="row">
-            <ul class="nav nav-pills">
+            <ul class="nav nav-tabs">
                 {% get_urls 'client' as client_urls %}
                 {% for page_name, page_title in client_urls %}
                     {% url page_name client.client_id as url %}
@@ -41,6 +41,7 @@
             </ul>
         </div>
         <div class="row">
+            <br />
             {% block client_content %}{% endblock %}
         </div>
     </div>

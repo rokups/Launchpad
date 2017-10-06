@@ -23,17 +23,21 @@
 {###}
 {% extends 'client/base.html' %}
 {% block client_content %}
-    <div class="col-sm-2 col-md-1">
-        One-liner:
+
+    <div class="col-md-12">
+        <form class="form-horizontal">
+            <div class="form-group">
+                <label for="one-liner" class="col-sm-4 col-md-3 col-lg-2">One-Liner script:</label>
+                <div class="input-group">
+                    <input type="text" class="col-sm-8 col-md-9 col-lg-10 form-control" id="one-liner" value="{{ one_liner }}">
+                    <div class="input-group-addon">
+                        <button class="btn btn-sm" onclick="copy_text('one-liner')"><i class="glyphicon glyphicon-copy"></i></button>
+                    </div>
+                </div>
+            </div>
+        </form>
     </div>
-    <div class="col-sm-8 col-md-6">
-        <textarea id="one-liner" rows="1" cols="80">{{ one_liner }}</textarea>
-    </div>
-    <div class="col-sm-1"><button onclick="copy_text('one-liner')"><i class="glyphicon glyphicon-copy"></i></button></div>
-    <form method="post">
-        {% csrf_token %}
-        <input type="submit" value="Test">
-    </form>
+
 {% endblock %}
 {% block footer %}
     <script type="text/javascript">
@@ -47,7 +51,7 @@
             }
             catch (ex)
             {
-                alert('Copying failed');
+                alert('Copying failed: ' + ex);
                 return false;
             }
         }

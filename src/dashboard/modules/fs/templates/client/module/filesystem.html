@@ -24,33 +24,42 @@
 {% extends 'client/base.html' %}
 
 {% block client_content %}
-    <form method="post">
-        {% csrf_token %}
-        <input name="d" value="{{ request.POST.d }}">
-        <input type="submit" value="List directory">
-        {% if directory_listing %}
-            <table class="table table-striped">
-                <tr>
-                    <th>Name</th>
-                    <th>Access</th>
-                    <th>Modification Time</th>
-                    <th>Access Time</th>
-                </tr>
-                {% for filename, stats in directory_listing.items %}
+    <div class="col-md-12">
+        <form class="form-horizontal" method="post">
+            {% csrf_token %}
+            <div class="form-group">
+                <label for="fs-path" class="sr-only">Filesystem path</label>
+                <div class="input-group">
+                    <input type="text" name="d" class="col-lg-12 form-control" id="fs-path" value="{{ request.POST.d }}" placeholder="Filesystem path">
+                    <div class="input-group-addon">
+                        <button class="btn btn-sm" type="submit"><i class="glyphicon glyphicon-triangle-right"></i></button>
+                    </div>
+                </div>
+            </div>
+            {% if directory_listing %}
+                <table class="table table-striped">
                     <tr>
-                        <td>
-                        {% if stats.st_mode|slice:":1" == 'd' %}
-                            <button class="btn btn-link" name="d" value="{{ request.POST.d }}{% if request.POST.d != '/' %}/{% endif %}{{ filename }}">{{ filename }}</button>
-                        {% else %}
-                            {{ filename }}
-                        {% endif %}
-                        </td>
-                        <td>{{ stats.st_mode }}</td>
-                        <td>{{ stats.st_mtime }}</td>
-                        <td>{{ stats.st_ctime }}</td>
+                        <th>Name</th>
+                        <th>Access</th>
+                        <th>Modification Time</th>
+                        <th>Access Time</th>
                     </tr>
-                {% endfor %}
-            </table>
-        {% endif %}
-    </form>
+                    {% for filename, stats in directory_listing.items %}
+                        <tr>
+                            <td>
+                                {% if stats.st_isdir %}
+                                    <button class="btn btn-link" name="d" type="submit" value="{{ request.POST.d }}{% if request.POST.d != '/' %}/{% endif %}{{ filename }}">{{ filename }}</button>
+                                {% else %}
+                                    {{ filename }}
+                                {% endif %}
+                            </td>
+                            <td>{{ stats.st_mode }}</td>
+                            <td>{{ stats.st_mtime }}</td>
+                            <td>{{ stats.st_ctime }}</td>
+                        </tr>
+                    {% endfor %}
+                </table>
+            {% endif %}
+        </form>
+    </div>
 {% endblock %}

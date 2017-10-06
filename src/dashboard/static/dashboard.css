@@ -106,3 +106,6 @@ body {
     margin-top: 0;
 }
 
+.input-group-addon > .btn {
+    padding: 0;
+}
