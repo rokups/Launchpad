@@ -25,6 +25,7 @@ import marshal
 import importlib.util
 from contextlib import suppress
 
+import tinyrpc
 from django.db import transaction
 from django.utils import timezone
 
@@ -32,28 +33,14 @@ from common.session import LaunchpadSession
 from dashboard.models import Client
 
 
-class LaunchpadServer(object):
-    def __init__(self, session):
-        self._session = session
-
-    def greet(self):
-        return 'Howdy'
-
-    def import_module(self, module_name):
-        try:
-            spec = importlib.util.find_spec(module_name)
-            if not spec:
-                return None
-            with open(spec.origin, 'rb') as fp:
-                return marshal.dumps(compile(fp.read(), '<frozen>', 'exec'))
-        except FileNotFoundError:
-            return None
-
-
 class LaunchpadServerSession(LaunchpadSession):
     def __init__(self, client_id):
         self.client_id = client_id
-        super().__init__(LaunchpadServer(self), 'LaunchpadClient')
+        super().__init__()
+        # Register self as rpc server
+        self._dispatcher.register_object('server', self)
+        # Retrieve client to rpc server on the other end
+        self.client = self._dispatcher.get_object('client')
 
     def on_connect(self, connection):
         try:
@@ -73,3 +60,18 @@ class LaunchpadServerSession(LaunchpadSession):
                 client = Client.objects.get(client_id=self.client_id)
                 client.date_disconnected = timezone.now()
                 client.save()
+
+    @tinyrpc.public
+    def greet(self):
+        return 'Howdy'
+
+    @tinyrpc.public
+    def import_module(self, module_name):
+        try:
+            spec = importlib.util.find_spec(module_name)
+            if not spec:
+                return None
+            with open(spec.origin, 'rb') as fp:
+                return marshal.dumps(compile(fp.read(), '<frozen>', 'exec'))
+        except FileNotFoundError:
+            return None

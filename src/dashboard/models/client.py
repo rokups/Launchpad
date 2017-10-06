@@ -79,3 +79,7 @@ class Client(models.Model):
             return LaunchpadSession.clients[self.client_id]
         except KeyError:
             return None
+
+    @property
+    def client(self):
+        return self.session.client

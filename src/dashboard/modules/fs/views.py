@@ -49,20 +49,20 @@ class FilesystemView(TemplateView):
         return dict(sorted(directory_listing.items(), key=sort_key))
 
     def get(self, request, client_id):
-        client = Client.objects.get(client_id=client_id)
+        entry = Client.objects.get(client_id=client_id)
 
         target_path = request.POST.get('d', '')
         directory_listing = None
         if target_path:
             try:
-                directory_listing = client.session.fs_enumerate_directory(target_path)
+                directory_listing = entry.client.fs.enumerate_directory(target_path)
                 directory_listing = self.format_listing(directory_listing)
             except AttributeError:
                 directory_listing = None
                 messages.error(request, 'Error: client is not connected.')
 
         context = {
-            'client': client,
+            'client': entry,
             'directory_listing': directory_listing
         }
         return self.render_to_response(context)

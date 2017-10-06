@@ -1,5 +1,5 @@
 pefile==2016.3.28
-json-rpc==1.10.3
+tinytinyrpc==0.0.1
 cbor==1.0.0
 django==1.11.3
 django-debug-toolbar==1.8

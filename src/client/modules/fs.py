@@ -23,15 +23,19 @@
 #
 import os
 
+import tinyrpc
+
 from common import encoder
 
 
+@tinyrpc.public
 class FilesystemClientModule(object):
     @classmethod
     def setup(cls):
         pass
 
-    def fs_enumerate_directory(self, dir_path):
+    @tinyrpc.public
+    def enumerate_directory(self, dir_path):
         result = {}
         for filename in os.listdir(dir_path):
             try:

@@ -21,12 +21,12 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
 #
-import os
 import sys
 import time
 import asyncio
-import subprocess
 from contextlib import suppress
+
+import tinyrpc
 
 from client.importer import RemoteImporter
 from client.modules.fs import FilesystemClientModule
@@ -34,26 +34,21 @@ from common.session import LaunchpadSession
 from common import transport
 
 
-class LaunchpadClient(FilesystemClientModule):
-    def __init__(self, session):
-        self._session = session
-
-    def list_direcotry(self, directory):
-        if os.name == 'nt':
-            args = ['cmd.exe', '/c', 'dir', directory]
-        else:
-            args = ['ls', '-lah', directory]
-        return subprocess.check_output(args)
-
-
+@tinyrpc.public
 class LaunchpadClientSession(LaunchpadSession):
     def __init__(self):
-        super().__init__(LaunchpadClient(self), 'LaunchpadServer')
+        super().__init__()
         self._remote_importer = RemoteImporter(self)
+        # Register self as rpc server
+        self._dispatcher.register_object('client', self)
+        # Retrieve client to rpc server on the other end
+        self.server = self._dispatcher.get_object('server')
+        # Initialize plugins
+        self.fs = FilesystemClientModule()
 
     def on_connect(self, connection):
         super().on_connect(connection)
-        sys.meta_path.insert(0, self._remote_importer)
+        # sys.meta_path.insert(0, self._remote_importer)
 
     def on_disconnect(self):
         with suppress(ValueError):
