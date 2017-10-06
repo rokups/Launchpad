@@ -32,7 +32,7 @@ def encode(obj):
     """
 
     if isinstance(obj, (dict, set, list, str, int, float)):
-        return
+        return obj
 
     if isinstance(obj, os.stat_result):
         return {
